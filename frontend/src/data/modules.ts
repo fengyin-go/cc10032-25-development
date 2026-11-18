@@ -222,6 +222,17 @@ export const MODULES: ModuleMeta[] = [
     actionTargets: {"启动任务": "待启动", "停止任务": "运行中"},
     metrics: ["任务总数", "运行中数", "失败数"],
   },
+  {
+    key: "stream_job",
+    name: "流式作业",
+    entity: "流式作业",
+    desc: "组装源端与窗口策略形成作业编排数据，串联任务拓扑部署与故障转移清单",
+    fields: ["作业名称", "源端配置", "窗口策略", "计算拓扑", "并行度", "启动时间", "运行水位"],
+    statuses: ["草稿", "待启动", "运行中", "已暂停", "已停止"],
+    actions: ["启动作业", "暂停作业", "停止作业"],
+    actionTargets: {"启动作业": "待启动", "暂停作业": "运行中", "停止作业": "已暂停"},
+    metrics: ["作业总数", "运行中数", "异常数"],
+  },
 ]
 
 export const MODULE_BY_KEY: Map<string, ModuleMeta> = new Map(

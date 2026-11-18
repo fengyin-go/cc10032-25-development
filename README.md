@@ -79,5 +79,27 @@ npm run dev
 - 列表接口统一返回 `{ items, total, page, size }`，动作接口统一返回 `{ ok, message }`。
 - 状态流转只允许在 `app/services` 里改，路由层不做业务判断。
 
+## 作业编排 ↔ 故障转移链路（序号25）
+
+`stream_job`（流式作业）与 `task_topology`（任务拓扑）之间的完整链路，由
+`backend/app/routers/orchestration.py` 暴露 `/api/orchestration/*` 接口，
+前端对应 `StreamJobOrchestrationView.vue` 与 `TaskTopologyFailoverView.vue` 两个页面。
+
+```text
+读取作业配置 → 校验拓扑依赖 → 形成完整作业编排数据（事务化，失败整体回滚）
+            → 部署可执行拓扑（重复启动幂等，不生成第二个当前拓扑）
+            → 源端与窗口引用全部有效后发布故障转移清单
+            → 序号25失败/重试/中断（重复异常只记一次，恢复只执行一次）
+            → 双故障取舍：保留拓扑切备用源 / 停止作业后重建（各只留一个可执行版本）
+```
+
+关键约定：
+
+- 编排数据不完整禁止部署拓扑；引用失效禁止发布故障转移清单。
+- 所有写操作走内存表事务快照，异常即回滚到原结果，接口不返回半成品。
+- 空态与暂无数据统一以 `empty=true + reason` 返回，前端两个页面均可观察。
+- 序号25异常边界：同作业同类型异常去重、恢复幂等，两种双故障取舍形成不同终态版本。
+- 覆盖测试见 `backend/tests/test_orchestration.py`。
+
 领域：数据工程
 子方向：数据分析与数据应用
